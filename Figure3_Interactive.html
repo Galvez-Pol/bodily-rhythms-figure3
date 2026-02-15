@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Interactive Perceptual Inference - Revised</title>
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<style>
+  body { 
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+    font-size: 18px;
+    max-width: 1000px; 
+    margin: 20px auto; 
+    line-height: 1.6;
+    padding: 0 20px;
+    color: #333;
+  }
+  
+  h2 { 
+    font-size: 28px;
+    margin-bottom: 0.5em; 
+    color: #222;
+  }
+  
+  h3 { 
+    font-size: 22px;
+    margin-top: 1.5em; 
+    margin-bottom: 0.6em;
+    color: #444;
+  }
+  
+  h4 {
+    font-size: 18px;
+    margin-top: 1em;
+    margin-bottom: 0.5em;
+    font-weight: 600;
+  }
+  
+  p, ul { 
+    font-size: 16px;
+    margin-bottom: 1em;
+  }
+  
+  ul li {
+    margin-bottom: 0.5em;
+  }
+  
+  strong {
+    font-weight: 600;
+    color: #222;
+  }
+  
+  #controls, #oscControls, #precisionPanel {
+    margin-top: 25px; 
+    padding: 20px; 
+    border: 2px solid #ddd; 
+    border-radius: 8px;
+    background-color: #fafafa;
+  }
+  
+  .control-row {
+    display: flex;
+    align-items: center;
+    margin: 15px 0;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  
+  .control-row label {
+    font-weight: 600;
+    font-size: 16px;
+    min-width: 120px;
+  }
+  
+  #interoSlider {
+    flex: 1;
+    min-width: 200px;
+    height: 8px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: linear-gradient(to right, #666 0%, #999 50%, #cc0000 100%);
+    outline: none;
+    border-radius: 4px;
+  }
+  
+  #interoSlider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 24px;
+    height: 24px;
+    background: #9370DB;
+    cursor: pointer;
+    border-radius: 50%;
+    border: 2px solid white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  }
+  
+  #interoSlider::-moz-range-thumb {
+    width: 24px;
+    height: 24px;
+    background: #9370DB;
+    cursor: pointer;
+    border-radius: 50%;
+    border: 2px solid white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  }
+  
+  .slider-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 8px;
+    padding: 0 2px;
+    font-size: 13px;
+    color: #666;
+    font-weight: 500;
+  }
+  
+  .slider-label {
+    text-align: center;
+    flex: 1;
+  }
+  
+  .slider-label:first-child {
+    text-align: left;
+  }
+  
+  .slider-label:last-child {
+    text-align: right;
+  }
+  
+  .slider-label.center {
+    text-align: center;
+  }
+  
+  .value-display {
+    font-size: 20px;
+    font-weight: 600;
+    color: #9370DB;
+    min-width: 60px;
+    text-align: center;
+  }
+  
+  #statsDisplay {
+    margin-top: 15px;
+    padding: 15px;
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 15px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+  }
+  
+  .stat-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .stat-label {
+    font-weight: 500;
+    color: #666;
+  }
+  
+  .stat-value {
+    font-weight: 700;
+    font-size: 16px;
+    color: #222;
+  }
+  
+  input[type="number"] { 
+    width: 90px;
+    padding: 6px 10px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  
+  button { 
+    padding: 10px 20px;
+    font-size: 16px;
+    font-weight: 600;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s;
+    margin: 5px;
+  }
+  
+  button:hover {
+    transform: translateY(-1px);
+  }
+  
+  button:active {
+    transform: translateY(0);
+  }
+  
+  #togglePlayBtn {
+    background-color: #4CAF50;
+    color: white;
+    padding: 12px 30px;
+    font-size: 18px;
+  }
+  
+  #togglePlayBtn:hover {
+    background-color: #45a049;
+  }
+  
+  #togglePlayBtn.playing {
+    background-color: #f44336;
+  }
+  
+  #togglePlayBtn.playing:hover {
+    background-color: #da190b;
+  }
+  
+  #resetBtn {
+    background-color: #2196F3;
+    color: white;
+  }
+  
+  #resetBtn:hover {
+    background-color: #0b7dda;
+  }
+  
+  .preset-btn {
+    background-color: #9370DB;
+    color: white;
+  }
+  
+  .preset-btn:hover {
+    background-color: #7a5cbf;
+  }
+  
+  #plot { 
+    height: 400px; 
+    margin: 20px 0;
+  }
+  
+  #precisionPlot { 
+    height: 300px;
+    margin-top: 15px;
+  }
+  
+  #interpretationBox {
+    margin-top: 20px;
+    padding: 15px 20px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-left: 4px solid #9370DB;
+    border-radius: 6px;
+    font-size: 16px;
+    line-height: 1.5;
+    color: #333;
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+  }
+  
+  #interpretationBox strong {
+    color: #9370DB;
+    font-weight: 700;
+  }
+  
+  /* Tooltip styles */
+  .tooltip-term {
+    position: relative;
+    border-bottom: 1px dotted #666;
+    cursor: help;
+    color: #444;
+  }
+  
+  .tooltip-term:hover {
+    color: #9370DB;
+    border-bottom-color: #9370DB;
+  }
+  
+  .tooltip-term .tooltip-text {
+    visibility: hidden;
+    opacity: 0;
+    width: 280px;
+    background-color: #333;
+    color: #fff;
+    text-align: left;
+    border-radius: 6px;
+    padding: 12px 15px;
+    position: absolute;
+    z-index: 1000;
+    bottom: 125%;
+    left: 50%;
+    margin-left: -140px;
+    font-size: 14px;
+    line-height: 1.4;
+    font-weight: normal;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    transition: opacity 0.3s, visibility 0.3s;
+  }
+  
+  .tooltip-term .tooltip-text::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -6px;
+    border-width: 6px;
+    border-style: solid;
+    border-color: #333 transparent transparent transparent;
+  }
+  
+  .tooltip-term:hover .tooltip-text {
+    visibility: visible;
+    opacity: 1;
+  }
+  
+  @media (max-width: 768px) {
+    body {
+      font-size: 16px;
+      padding: 0 15px;
+    }
+    
+    h2 {
+      font-size: 24px;
+    }
+    
+    h3 {
+      font-size: 20px;
+    }
+    
+    #statsDisplay {
+      grid-template-columns: 1fr;
+    }
+    
+    .control-row {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    
+    .control-row label {
+      min-width: auto;
+    }
+    
+    #plot {
+      height: 300px;
+    }
+    
+    #precisionPlot {
+      height: 250px;
+    }
+    
+    /* Adjust tooltip width for mobile */
+    .tooltip-term .tooltip-text {
+      width: 220px;
+      margin-left: -110px;
+      font-size: 13px;
+    }
+    
+    /* Smaller slider labels on mobile */
+    .slider-labels {
+      font-size: 11px;
+      margin-top: 5px;
+    }
+  }
+</style>
+</head>
+<body>
+
+<h2>Interactive Perceptual Inference</h2>
+
+<p>
+This interactive figure illustrates a simple <span class="tooltip-term">Bayesian<span class="tooltip-text">A mathematical framework for updating beliefs based on new evidence. Named after Thomas Bayes, it describes how to combine prior knowledge with new observations.</span></span> model of perceptual inference in which bodily state modulates how strongly sensory evidence is weighted.
+</p>
+
+<p>
+The plot shows three probability distributions along a one-dimensional perceptual estimate axis:
+</p>
+
+<ul>
+  <li><strong><span class="tooltip-term">Prior expectation<span class="tooltip-text">What we expect to perceive before receiving sensory input, based on past experience and context. Represented as a probability distribution over possible perceptual states.</span></span></strong> (orange dashed)</li>
+  <li><strong><span class="tooltip-term">Sensory evidence (likelihood)<span class="tooltip-text">Information arriving from the senses (e.g., vision, touch, hearing). Also called the "likelihood" in Bayesian terms. Represented as a probability distribution reflecting sensory uncertainty.</span></span></strong> (cyan dashed)</li>
+  <li><strong><span class="tooltip-term">Posterior<span class="tooltip-text">The updated belief after combining prior expectations with sensory evidence. This is the brain's best estimate of what's actually out there. Computed via Bayes' rule.</span></span> estimate</strong> (purple solid, filled)</li>
+</ul>
+
+<p>
+The prior and likelihood have fixed means at different locations. The posterior is computed via the standard Gaussian conjugate update, combining the two sources according to their relative <span class="tooltip-term">precision<span class="tooltip-text">Statistical reliability or certainty of information. Higher precision = narrower distribution = more confident. In Bayesian inference, precision determines how much weight each source of information receives. Mathematically: precision = 1/variance.</span></span> (reliability).
+</p>
+
+<h3><span class="tooltip-term">Interoceptive signal strength (I)<span class="tooltip-text">A model parameter representing internal bodily signals (like heartbeats or breathing) that modulate the relative precision of prior expectations vs. sensory evidence. Higher I = trust priors more; lower I = trust sensory input more.</span></span>: interpretation</h3>
+
+<p>
+The slider <strong>I</strong> represents a simplified proxy for cardiorespiratory interoceptive signalling, modelled here as a factor that reallocates precision between internal expectations and incoming sensory evidence.
+</p>
+
+<ul>
+  <li><strong>I → +1</strong>: Prior precision increases and sensory precision decreases. The posterior shifts toward the prior.</li>
+  <li><strong>I → −1</strong>: Sensory precision increases and prior precision decreases. The posterior shifts toward sensory evidence.</li>
+  <li><strong>I ≈ 0</strong>: Prior and sensory precision are balanced. The posterior lies between them, reflecting similar weighting.</li>
+</ul>
+
+<p>
+<strong>Key message</strong>: rhythmic changes in interoceptive signalling may bias perception by shifting the balance between evidence-driven and expectation-driven inference, even when the external input is unchanged.
+</p>
+
+<div id="plot"></div>
+
+<div id="controls">
+  <h3>Manual Control</h3>
+  <div class="control-row">
+    <label for="interoSlider">Interoceptive signal (I):</label>
+    <input id="interoSlider" type="range" min="-100" max="100" step="1" value="0">
+    <span class="value-display" id="interoValue">0.00</span>
+  </div>
+  
+  <div class="slider-labels">
+    <span class="slider-label">Sensory dominant</span>
+    <span class="slider-label center">Balanced</span>
+    <span class="slider-label">Prior dominant</span>
+  </div>
+  
+  <div id="statsDisplay">
+    <div class="stat-item">
+      <span class="stat-label">Current I:</span>
+      <span class="stat-value" id="statI">0.00</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-label tooltip-term">Prior precision:<span class="tooltip-text">How certain/reliable the prior expectation is. Higher values = narrower distribution = more confident. Formula: 1/σ²_prior</span></span>
+      <span class="stat-value" id="statPriorPrec">—</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-label tooltip-term">Likelihood precision:<span class="tooltip-text">How certain/reliable the sensory evidence is. Higher values = narrower distribution = more confident measurement. Formula: 1/σ²_likelihood</span></span>
+      <span class="stat-value" id="statLikPrec">—</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-label tooltip-term">Prior weight:<span class="tooltip-text">The percentage contribution of the prior to the posterior. Computed as: prior_precision / (prior_precision + likelihood_precision). When this is high, the posterior is pulled toward the prior.</span></span>
+      <span class="stat-value" id="statPriorWeight">—</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-label tooltip-term">Likelihood weight:<span class="tooltip-text">The percentage contribution of sensory evidence to the posterior. Computed as: likelihood_precision / (prior_precision + likelihood_precision). When this is high, the posterior is pulled toward the sensory input.</span></span>
+      <span class="stat-value" id="statLikWeight">—</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-label tooltip-term">Posterior mean:<span class="tooltip-text">The center of the posterior distribution—the brain's best estimate. It's a precision-weighted average of the prior mean and likelihood mean: μ_post = (w_prior × μ_prior) + (w_lik × μ_lik)</span></span>
+      <span class="stat-value" id="statPostMu">—</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-label tooltip-term">Posterior SD:<span class="tooltip-text">Standard deviation of the posterior—how uncertain the final estimate is. Lower values = more confident estimate. Formula: σ_post = 1/√(precision_prior + precision_likelihood)</span></span>
+      <span class="stat-value" id="statPostSigma">—</span>
+    </div>
+  </div>
+  
+  <div id="interpretationBox">
+    <span id="interpretationText">Balanced precision weighting — posterior reflects roughly equal influence from prior expectations and sensory evidence.</span>
+  </div>
+</div>
+
+<div id="oscControls">
+  <h3>Dynamic Oscillation</h3>
+  <p>Oscillate the interoceptive signal to simulate rhythmic physiological modulation (e.g., cardiac or respiratory cycles).</p>
+  
+  <div class="control-row">
+    <label for="minI">Min I:</label>
+    <input id="minI" type="number" step="0.1" min="-1" max="1" value="-1">
+    <label for="maxI">Max I:</label>
+    <input id="maxI" type="number" step="0.1" min="-1" max="1" value="1">
+    <label for="cycleDuration">Cycle (s):</label>
+    <input id="cycleDuration" type="number" step="0.1" min="0.3" max="10" value="1">
+  </div>
+  
+  <div style="margin-top: 15px;">
+    <button id="togglePlayBtn">▶ Play</button>
+    <button id="resetBtn">Reset</button>
+  </div>
+
+  <h4>Presets</h4>
+  <button class="preset-btn" onclick="setPreset('heartbeat')">Heartbeat (~1s)</button>
+  <button class="preset-btn" onclick="setPreset('respiration')">Respiration (~5s)</button>
+</div>
+
+<div id="precisionPanel">
+  <h3><span class="tooltip-term">Signal-to-Signal Ratio (SSR)<span class="tooltip-text">A framework for understanding how different physiological signals compete for influence over perception and action. Here, interoceptive (internal bodily) signals modulate the balance between prior expectations and exteroceptive (external sensory) precision.</span></span> — Precision Dynamics</h3>
+  <p>
+This panel shows how <strong>interoceptive</strong> (orange) and <strong>exteroceptive</strong> (light blue) precision vary over time as interoceptive signal strength changes. In this toy model, the two traces trade off: when interoceptive precision increases, exteroceptive precision decreases, and vice versa.
+</p>
+  <div id="precisionPlot"></div>
+</div>
+
+<script>
+// ==================== Mathematical Functions ====================
+function gaussian(x, mu, sigma) {
+  const norm = 1.0 / (sigma * Math.sqrt(2 * Math.PI));
+  return x.map(v => norm * Math.exp(-0.5 * Math.pow((v - mu)/sigma, 2)));
+}
+
+function computePosterior(muPrior, sigmaPrior, muLik, sigmaLik) {
+  const pPrior = 1 / (sigmaPrior * sigmaPrior);
+  const pLik = 1 / (sigmaLik * sigmaLik);
+  const varPost = 1 / (pPrior + pLik);
+  const muPost = varPost * (pPrior * muPrior + pLik * muLik);
+  const sigmaPost = Math.sqrt(varPost);
+  const wPrior = pPrior / (pPrior + pLik);
+  const wLik = pLik / (pPrior + pLik);
+  return { muPost, sigmaPost, pPrior, pLik, wPrior, wLik };
+}
+
+function getInterpretation(I, wPrior) {
+  if (I >= 0.6) {
+    return "<strong>Strong prior dominance</strong> — The prior is highly precise (narrow). Posterior is strongly pulled toward prior expectations, with sensory evidence having minimal influence.";
+  } else if (I >= 0.3) {
+    return "<strong>Moderate prior dominance</strong> — Prior precision is elevated. Posterior shifts toward prior expectations while still incorporating sensory evidence.";
+  } else if (I > -0.3) {
+    return "<strong>Balanced precision weighting</strong> — Posterior reflects roughly equal influence from prior expectations and sensory evidence.";
+  } else if (I > -0.6) {
+    return "<strong>Moderate sensory dominance</strong> — Sensory evidence is more precise. Posterior shifts toward incoming sensory information while maintaining some prior influence.";
+  } else {
+    return "<strong>Strong sensory dominance</strong> — Sensory evidence is highly precise (narrow). Posterior is strongly pulled toward sensory input, with prior expectations having minimal influence.";
+  }
+}
+
+// ==================== Constants ====================
+const xMin = -4, xMax = 4, nPoints = 800;
+const x = Array.from({length: nPoints}, (_, i) => xMin + (xMax - xMin) * i / (nPoints - 1));
+const MU_PRIOR = -1.5, MU_LIK = 1.5;
+const SIGMA_PRIOR_BASE = 0.9, SIGMA_LIK_BASE = 0.9;
+
+// Colorblind-friendly palette
+const COLOR_PRIOR = "#E69F00";  // Orange
+const COLOR_LIK = "#56B4E9";    // Sky blue
+const COLOR_POST = "#9370DB";   // Medium purple
+
+// ==================== State Management ====================
+let animating = false;
+let animationParams = { minI: -1, maxI: 1, T: 1 };
+let animationStart = null;
+let animationFrameId = null;
+
+// Fixed-size rolling window for precision history (max 500 points)
+const MAX_HISTORY_LENGTH = 500;
+let precisionHistory = [];
+
+let plotsInitialized = false;
+
+// ==================== Core Update Function ====================
+function updateFigure(I) {
+  // Compute precision modulation
+  const a = 0.5, b = 0.5;
+  let sigmaPrior = SIGMA_PRIOR_BASE * (1 - a * I);
+  let sigmaLik = SIGMA_LIK_BASE * (1 + b * I);
+  
+  // Clamp to avoid numerical issues
+  sigmaPrior = Math.max(0.05, sigmaPrior);
+  sigmaLik = Math.max(0.05, sigmaLik);
+
+  // Compute posterior and precisions
+  const { muPost, sigmaPost, pPrior, pLik, wPrior, wLik } = 
+    computePosterior(MU_PRIOR, sigmaPrior, MU_LIK, sigmaLik);
+  
+  // Compute distributions
+  const priorY = gaussian(x, MU_PRIOR, sigmaPrior);
+  const likY = gaussian(x, MU_LIK, sigmaLik);
+  const postY = gaussian(x, muPost, sigmaPost);
+
+  // Get max y value for vertical lines
+  const maxY = Math.max(...priorY, ...likY, ...postY);
+  
+  // Update main plot
+  const data = [
+    {
+      x: x,
+      y: priorY,
+      mode: "lines",
+      line: { color: COLOR_PRIOR, dash: "dash", width: 3 },
+      name: "Prior"
+    },
+    {
+      x: x,
+      y: likY,
+      mode: "lines",
+      line: { color: COLOR_LIK, dash: "dash", width: 3 },
+      name: "Sensory Evidence"
+    },
+    {
+      x: x,
+      y: postY,
+      mode: "lines",
+      line: { color: COLOR_POST, width: 4 },
+      fill: "tozeroy",
+      fillcolor: "rgba(147, 112, 219, 0.3)",
+      name: "Posterior"
+    },
+    // Vertical line at prior mean
+    {
+      x: [MU_PRIOR, MU_PRIOR],
+      y: [0, maxY * 0.95],
+      mode: "lines",
+      line: { color: COLOR_PRIOR, width: 2, dash: "dot" },
+      showlegend: false,
+      hoverinfo: "skip"
+    },
+    // Vertical line at likelihood mean
+    {
+      x: [MU_LIK, MU_LIK],
+      y: [0, maxY * 0.95],
+      mode: "lines",
+      line: { color: COLOR_LIK, width: 2, dash: "dot" },
+      showlegend: false,
+      hoverinfo: "skip"
+    },
+    // Vertical line at posterior mean
+    {
+      x: [muPost, muPost],
+      y: [0, maxY * 0.95],
+      mode: "lines",
+      line: { color: COLOR_POST, width: 2 },
+      showlegend: false,
+      hoverinfo: "skip"
+    },
+    // Labels for means (as text annotations will be added in layout)
+  ];
+
+  const layout = {
+    margin: { l: 60, r: 30, t: 40, b: 60 },
+    xaxis: { 
+      title: { text: "Perceptual estimate", font: { size: 16 } },
+      showticklabels: false,
+      zeroline: true,
+      zerolinewidth: 1,
+      zerolinecolor: "#ccc"
+    },
+    yaxis: { 
+      title: { text: "Probability density", font: { size: 16 } },
+      showticklabels: false,
+      zeroline: false
+    },
+    showlegend: true,
+    legend: { 
+      x: 0.02, 
+      y: 0.98, 
+      font: { size: 14 },
+      bgcolor: "rgba(255,255,255,0.8)",
+      bordercolor: "#ccc",
+      borderwidth: 1
+    },
+    annotations: [
+      {
+        x: MU_PRIOR,
+        y: maxY * 1.0,
+        text: "μ<sub>prior</sub>",
+        showarrow: false,
+        font: { size: 13, color: COLOR_PRIOR, family: "Arial, sans-serif" },
+        xanchor: "center",
+        yanchor: "bottom"
+      },
+      {
+        x: MU_LIK,
+        y: maxY * 1.0,
+        text: "μ<sub>lik</sub>",
+        showarrow: false,
+        font: { size: 13, color: COLOR_LIK, family: "Arial, sans-serif" },
+        xanchor: "center",
+        yanchor: "bottom"
+      },
+      {
+        x: muPost,
+        y: maxY * 1.0,
+        text: "μ<sub>post</sub>",
+        showarrow: false,
+        font: { size: 13, color: COLOR_POST, family: "Arial, sans-serif" },
+        xanchor: "center",
+        yanchor: "bottom",
+        bgcolor: "rgba(255, 255, 255, 0.7)",
+        borderpad: 2
+      }
+    ],
+    font: { family: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif", size: 14 }
+  };
+
+  const config = { displayModeBar: false, responsive: true };
+
+  if (!plotsInitialized) {
+    Plotly.newPlot("plot", data, layout, config);
+  } else {
+    Plotly.react("plot", data, layout, config);
+  }
+
+  // Update statistics display
+  document.getElementById("statI").textContent = I.toFixed(2);
+  document.getElementById("statPriorPrec").textContent = pPrior.toFixed(2);
+  document.getElementById("statLikPrec").textContent = pLik.toFixed(2);
+  document.getElementById("statPriorWeight").textContent = (wPrior * 100).toFixed(1) + "%";
+  document.getElementById("statLikWeight").textContent = (wLik * 100).toFixed(1) + "%";
+  document.getElementById("statPostMu").textContent = muPost.toFixed(2);
+  document.getElementById("statPostSigma").textContent = sigmaPost.toFixed(2);
+  
+  // Update interpretation text
+  document.getElementById("interpretationText").innerHTML = getInterpretation(I, wPrior);
+
+  // Record precision history with efficient rolling window (mirrored SSR approach)
+  const now = performance.now();
+  precisionHistory.push({ t: now, pInt: I, pExt: -I });
+  
+  // Maintain fixed max length
+  if (precisionHistory.length > MAX_HISTORY_LENGTH) {
+    precisionHistory.shift();
+  }
+  
+  updatePrecisionPlot();
+}
+
+// ==================== Precision Dynamics Plot ====================
+function updatePrecisionPlot() {
+  if (precisionHistory.length === 0) return;
+  
+  const now = performance.now();
+  const windowMs = 8000; // 8 second window
+  
+  // Filter to window (but keep rolling buffer for efficiency)
+  const filtered = precisionHistory.filter(d => now - d.t < windowMs);
+  
+  const t = filtered.map(d => (d.t - now) / 1000); // Negative time (past)
+  const pIntArr = filtered.map(d => d.pInt);
+  const pExtArr = filtered.map(d => d.pExt);
+
+  const data = [
+    {
+      x: t,
+      y: pIntArr,
+      mode: "lines",
+      line: { color: COLOR_PRIOR, width: 3 },
+      name: "Interoceptive precision"
+    },
+    {
+      x: t,
+      y: pExtArr,
+      mode: "lines",
+      line: { color: COLOR_LIK, width: 3 },
+      name: "Exteroceptive precision"
+    }
+  ];
+
+  const layout = {
+    margin: { l: 60, r: 30, t: 20, b: 60 },
+    xaxis: { 
+      title: { text: "Time", font: { size: 16 } },
+      autorange: "reversed",
+      zeroline: false,
+      showticklabels: false
+    },
+    yaxis: { 
+      title: { text: "Precision", font: { size: 16 } },
+      zeroline: true,
+      zerolinewidth: 1,
+      zerolinecolor: "#ccc",
+      tickvals: [-1, 1],
+      ticktext: ["−", "+"],
+      range: [-1.1, 1.1]
+    },
+    showlegend: true,
+    legend: { 
+      x: 0.02, 
+      y: 0.98,
+      font: { size: 13 },
+      bgcolor: "rgba(255,255,255,0.8)",
+      bordercolor: "#ccc",
+      borderwidth: 1
+    },
+    font: { family: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif", size: 14 }
+  };
+
+  const config = { displayModeBar: false, responsive: true };
+
+  if (!plotsInitialized) {
+    Plotly.newPlot("precisionPlot", data, layout, config);
+    plotsInitialized = true;
+  } else {
+    Plotly.react("precisionPlot", data, layout, config);
+  }
+}
+
+// ==================== Animation Functions ====================
+function clampI(v) { 
+  return Math.max(-1, Math.min(1, v)); 
+}
+
+function stepAnimation(timestamp) {
+  if (!animating) return;
+  
+  const { minI, maxI, T } = animationParams;
+  const center = (minI + maxI) / 2;
+  const amp = (maxI - minI) / 2;
+  const elapsed = (timestamp - animationStart) / 1000;
+  const I = clampI(center + amp * Math.sin(2 * Math.PI * elapsed / T));
+
+  slider.value = Math.round(I * 100);
+  sliderVal.textContent = I.toFixed(2);
+  updateFigure(I);
+
+  animationFrameId = requestAnimationFrame(stepAnimation);
+}
+
+function startAnimation() {
+  if (animating) return;
+  
+  animating = true;
+  const minI = clampI(parseFloat(minIEl.value));
+  const maxI = clampI(parseFloat(maxIEl.value));
+  const T = Math.max(0.1, parseFloat(cycleEl.value));
+  
+  animationParams = { minI, maxI, T };
+  animationStart = performance.now();
+  
+  togglePlayBtn.textContent = "⏸ Pause";
+  togglePlayBtn.classList.add("playing");
+  
+  animationFrameId = requestAnimationFrame(stepAnimation);
+}
+
+function pauseAnimation() {
+  if (!animating) return;
+  
+  animating = false;
+  
+  if (animationFrameId) {
+    cancelAnimationFrame(animationFrameId);
+    animationFrameId = null;
+  }
+  
+  togglePlayBtn.textContent = "▶ Play";
+  togglePlayBtn.classList.remove("playing");
+}
+
+function resetState() {
+  pauseAnimation();
+  
+  // Reset slider
+  slider.value = 0;
+  sliderVal.textContent = "0.00";
+  
+  // Reset oscillation parameters
+  minIEl.value = -1;
+  maxIEl.value = 1;
+  cycleEl.value = 1;
+  
+  // Clear history
+  precisionHistory = [];
+  
+  // Update display
+  updateFigure(0);
+}
+
+// ==================== Preset Functions ====================
+function setPreset(type) {
+  pauseAnimation();
+  
+  if (type === "heartbeat") {
+    minIEl.value = -0.4;
+    maxIEl.value = 0.6;
+    cycleEl.value = 1.0;
+  } else if (type === "respiration") {
+    minIEl.value = -0.8;
+    maxIEl.value = 0.8;
+    cycleEl.value = 5.0;
+  }
+}
+
+// ==================== Event Listeners ====================
+const slider = document.getElementById("interoSlider");
+const sliderVal = document.getElementById("interoValue");
+const minIEl = document.getElementById("minI");
+const maxIEl = document.getElementById("maxI");
+const cycleEl = document.getElementById("cycleDuration");
+const togglePlayBtn = document.getElementById("togglePlayBtn");
+const resetBtn = document.getElementById("resetBtn");
+
+slider.addEventListener("input", () => {
+  if (animating) return;
+  const I = parseInt(slider.value) / 100;
+  sliderVal.textContent = I.toFixed(2);
+  updateFigure(I);
+});
+
+togglePlayBtn.addEventListener("click", () => {
+  if (animating) {
+    pauseAnimation();
+  } else {
+    startAnimation();
+  }
+});
+
+resetBtn.addEventListener("click", resetState);
+
+// ==================== Initialize ====================
+updateFigure(0);
+</script>
+
+</body>
+</html>
